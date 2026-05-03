@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#07090d">
+    <meta name="description" content="WALKIE — Browser push-to-talk. Tune to a frequency. Talk.">
+    <title>WALKIE</title>
+
+```
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+```
+
+</head>
+
+<body class="state-idle">
+
+<!-- ── Background layers ── -->
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="scanlines"></div>
+
+<div class="app-container">
+
+```
+<!-- ── Header ── -->
+<header>
+    <div class="logo">
+        <span class="logo-mark">◈</span>
+        <span class="logo-text">WALKIE</span>
+    </div>
+    <div class="signal-cluster">
+        <div class="signal-bars">
+            <div class="sbar s1"></div>
+            <div class="sbar s2"></div>
+            <div class="sbar s3"></div>
+            <div class="sbar s4"></div>
+            <div class="sbar s5"></div>
+        </div>
+        <div id="status-light" class="status-dot"></div>
+    </div>
+</header>
+
+<!-- ── Frequency Tuner ── -->
+<section id="tuner-panel" class="tuner-panel">
+
+    <div class="tuner-header">
+        <span class="panel-label">▸ FREQUENCY TUNER</span>
+        <div class="squelch-row">
+            <span class="sq-label">SQL</span>
+            <div class="squelch-led" id="squelch-led"></div>
+        </div>
+    </div>
+
+    <!-- Big frequency display -->
+    <div class="tuner-display">
+        <div class="tuner-ch-label" id="tuner-ch">CH 07</div>
+        <div class="tuner-freq-row">
+            <span class="tuner-freq" id="tuner-freq">462.6875</span>
+            <span class="tuner-unit">MHz</span>
+        </div>
+        <div class="tuner-band">VHF · FRS / GMRS · 40 CHANNELS</div>
+    </div>
+
+    <!-- Draggable frequency tape — built by app.js -->
+    <div class="tape-wrapper" id="tape-wrapper">
+        <div class="tape-needle"></div>
+        <div class="freq-tape" id="freq-tape"></div>
+    </div>
+
+    <!-- Step + Tune controls -->
+    <div class="tuner-controls">
+        <button class="step-btn" id="ch-down">◂ CH</button>
+        <button class="tune-btn" id="tune-btn">⬧ TUNE IN</button>
+        <button class="step-btn" id="ch-up">CH ▸</button>
+    </div>
+
+</section>
+
+<!-- ── Locked channel badge (shown after tuning in) ── -->
+<div id="locked-badge" class="locked-badge scanning hidden">
+    <div class="locked-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+    </div>
+    <div class="locked-info">
+        <div class="locked-freq" id="locked-freq">462.6875 MHz</div>
+        <div class="locked-ch"  id="locked-ch">CHANNEL 07 · SCANNING...</div>
+    </div>
+</div>
+
+<!-- ── Disconnect button ── -->
+<div class="disconnect-row hidden" id="disconnect-row">
+    <button class="btn-disconnect" id="disconnect-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6"  x2="6"  y2="18"/>
+            <line x1="6"  y1="6"  x2="18" y2="18"/>
+        </svg>
+        DISCONNECT
+    </button>
+</div>
+
+<!-- ── PTT ── -->
+<main class="ptt-area">
+
+    <div id="feedback-display" class="feedback">STANDBY</div>
+
+    <div class="ptt-stage">
+        <div class="ring r4"></div>
+        <div class="ring r3"></div>
+        <div class="ring r2"></div>
+        <div class="ring r1"></div>
+        <button id="ptt-button" disabled>
+            <div class="ptt-face">
+                <div class="ptt-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.5"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="23"/>
+                        <line x1="8"  y1="23" x2="16" y2="23"/>
+                    </svg>
+                </div>
+                <div class="ptt-label">PUSH TO TALK</div>
+            </div>
+        </button>
+    </div>
+
+    <!-- Channel indicator + waveform -->
+    <div class="meta-row">
+        <div class="freq-readout">
+            <span class="freq-label">CH</span>
+            <span class="freq-val" id="peer-id-display">--</span>
+        </div>
+        <div class="waveform">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+        </div>
+    </div>
+
+    <!-- Countdown bar — shown when peer disconnects -->
+    <div class="countdown-bar hidden" id="countdown-bar">
+        <div class="countdown-fill" id="countdown-fill" style="width:100%"></div>
+    </div>
+
+</main>
+
+<!-- ── Debug ── -->
+<div class="debug-bar">
+    <button id="debug-toggle">⌥ DEBUG</button>
+</div>
+<div id="debug-panel" class="hidden">
+    <div id="debug-log"></div>
+</div>
+```
+
+</div>
+
+<!-- ── Busy channel modal ── -->
+
+<div id="busy-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-icon">⚠</div>
+        <div class="modal-title">CHANNEL BUSY</div>
+        <div class="modal-msg">
+            CH <span id="modal-ch-num" class="modal-ch-hl">--</span> already
+            has 2 active users.<br>Join anyway?
+        </div>
+        <div class="modal-actions">
+            <button class="modal-cancel" id="modal-cancel">CANCEL</button>
+            <button class="modal-join"   id="modal-join">JOIN ANYWAY</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Scripts ── -->
+
+<!-- debug.js is a plain script so log() lands in global scope before app.js runs -->
+
+<script src="debug.js"></script>
+
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
